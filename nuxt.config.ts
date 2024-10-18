@@ -49,6 +49,8 @@ export default defineNuxtConfig({
         { name: "robots", content: "index, follow" },
         { name: "author", content: "KeepList" },
         { name: "keywords", content: "Liste, Todo, Teilen" },
+        { name: "og:image", content: "/pwa-512x512.png" },
+        { name: "og:site_name", content: "KeepTrack" },
         //Apple links
         { name: "apple-touch-icon", content: "/pwa-512x512.png" },
         { name: "apple-touch-icon", content: "/pwa-192x192.png" },
