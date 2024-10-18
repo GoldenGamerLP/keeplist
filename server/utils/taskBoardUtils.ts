@@ -20,7 +20,7 @@ function startSyncUpdateTask() {
     );
   }
 
-  intervall = setInterval(() => {
+  intervall = setInterval(async () => {
     runSyncUpdateTask();
   }, parseInt(intervallMilliseconds ?? "5000"));
 }

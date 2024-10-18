@@ -1,5 +1,5 @@
 <template>
-	<div v-if="fetchStatus === 'error'" class="min-h-screen flex items-center justify-center w-screen">
+	<div v-if="fetchStatus === 'error' || sseStatus === 'CLOSED'" class="min-h-screen flex items-center justify-center w-screen">
 		<div class="flex flex-col items-center justify-center h-full bg-card rounded-md text-card-foreground p-6 relative">
 			<Icon name="mdi:flash-triangle" class="size-12 text-destructive absolute -top-6 right-[50%] translate-x-[50%]"></Icon>
 			<h2 class="text-2xl">Ups... ein Fehler</h2>
