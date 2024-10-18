@@ -1,0 +1,141 @@
+<template>
+  <div class="min-h-screen w-full flex justify-center items-center flex-col">
+    <div class="max-w-sm">
+      <Icon name="lucide:list-plus" class="animate-bounce" size="50" />
+      <h1 class="text-4xl font-semibold text-primary my-2">KeepList</h1>
+      <Tabs default-value="register" class="max-w-sm">
+        <TabsList class="grid w-full grid-cols-2">
+          <TabsTrigger value="register">
+            Registesrieren
+          </TabsTrigger>
+          <TabsTrigger value="login">
+            Einloggen
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="register">
+          <Card>
+            <CardHeader>
+              <CardTitle>Registesrieren
+              </CardTitle>
+              <CardDescription>
+                Erstelle einen Account um listen zu erstellen und mit anderen auf der Welt zu teilen.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AutoForm @submit="registerSubmit"
+                :field-config="{ password: { inputProps: { type: 'password' } }, confirmPassword: { inputProps: { type: 'password' } } }"
+                :schema="registerSchema">
+                <p class="text-red-500">{{ fetchError }}</p>
+                <Button type="submit" class="mt-2" :loading="isLoading">
+                  <Icon name="mdi:account-plus" class="mr-2 size-5" />
+                  Los gehts!
+                </Button>
+              </AutoForm>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="login">
+          <Card>
+            <CardHeader>
+              <CardTitle>Einloggen</CardTitle>
+              <CardDescription>
+                Logge dich ein um listen zu erstellen und mit anderen auf der Welt zu teilen.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AutoForm :field-config="{ password: { inputProps: { type: 'password' } } }" :schema="loginSchema"
+                @submit="loginSubmit">
+                <p class="text-red-500">{{ fetchError }}</p>
+                <Button type="submit" class="mt-2" :loading="isLoading">
+                  <Icon name="mdi:login" class="size-5 mr-2" />
+                  Einloggen
+                </Button>
+              </AutoForm>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  </div>
+</template>
+
+<script lang="ts" setup>
+import * as z from 'zod'
+
+definePageMeta({
+  middleware: 'only-guests',
+});
+
+useHead({
+  title: 'KeepList - Login oder Registrieren',
+});
+
+const isLoading = ref(false);
+const fetchError = ref('');
+
+watch(() => fetchError.value, (error) => {
+  if (error) {
+    setTimeout(() => {
+      fetchError.value = '';
+    }, 5000);
+  }
+});
+
+const loginSchema = z.object({
+  email: z.string().email('Ungültige E-Mail Adresse').describe("Deine E-Mail Adresse"),
+  password: z.string().min(6, 'Passwort muss mindestens 6 Zeichen lang sein').describe("Dein Passwort"),
+});
+
+const registerSchema = z.object({
+  displayName: z.string().min(3, 'Name muss mindestens 3 Zeichen lang sein').describe("Dein Name"),
+  email: z.string().email('Ungültige E-Mail Adresse').describe("Deine E-Mail Adresse"),
+  password: z.string().min(6, 'Passwort muss mindestens 6 Zeichen lang sein').describe("Dein Passwort"),
+  confirmPassword: z.string().min(6, 'Passwort muss mindestens 6 Zeichen lang sein').describe("Passwort bestätigen"),
+});
+
+const registerSubmit = async (values: Record<string, any>) => {
+  isLoading.value = true;
+  try {
+    const res = await $fetch('/api/v1/auth/actions/signup', {
+      method: 'POST',
+      body: JSON.stringify(values)
+    });
+
+    if (res) {
+      goToAccount();
+      console.log('User registered');
+    } else {
+      console.error('Failed to register');
+    }
+  } catch (error: any) {
+    fetchError.value = error.statusMessage;
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const loginSubmit = async (values: Record<string, any>) => {
+  isLoading.value = true;
+  try {
+    const res = await $fetch('/api/v1/auth/actions/login', {
+      method: 'POST',
+      body: JSON.stringify(values)
+    });
+
+    if (res) {
+      goToAccount();
+      console.log('User logged in');
+    } else {
+      console.error('Failed to login');
+    }
+  } catch (error: any) {
+    fetchError.value = error.statusMessage;
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const goToAccount = () => {
+  useRouter().push('/myaccount');
+};
+</script>
