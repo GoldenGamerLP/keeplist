@@ -1,8 +1,11 @@
 import { addSyncClient, removeSyncClient } from "~/server/utils/sync";
 
-export default defineEventHandler(async (event) => {
+export default eventHandler(async (event) => {
+  const start = Date.now();
   const { boardId } = getRouterParams(event);
   const { uniqueFingerprint } = getQuery(event);
+
+  console.log(`Syncing board ${boardId} for client ${uniqueFingerprint} took ${Date.now() - start}ms`);
 
   if (!boardId || !uniqueFingerprint || typeof uniqueFingerprint !== "string") {
     throw createError({
@@ -12,6 +15,8 @@ export default defineEventHandler(async (event) => {
   }
 
   const eventStream = createEventStream(event);
+
+  console.log(`created event stream for board ${boardId} and client ${uniqueFingerprint} took ${Date.now() - start}ms`);
 
   // Add the client to the sync clients
   addSyncClient(uniqueFingerprint, boardId.toString(), event.context.user ?? undefined, eventStream);
@@ -26,6 +31,8 @@ export default defineEventHandler(async (event) => {
     removeSyncClient(boardId.toString(), uniqueFingerprint);
     await eventStream.close();
   });
+
+  console.log(`added client to sync clients for board ${boardId} and client ${uniqueFingerprint} took ${Date.now() - start}ms`);
 
   return eventStream.send();
 });
