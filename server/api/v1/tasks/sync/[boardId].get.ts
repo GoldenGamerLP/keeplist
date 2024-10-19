@@ -34,5 +34,5 @@ export default eventHandler(async (event) => {
 
   console.log(`added client to sync clients for board ${boardId} and client ${uniqueFingerprint} took ${Date.now() - start}ms`);
 
-  return eventStream.send();
+  return await eventStream.send();
 });
