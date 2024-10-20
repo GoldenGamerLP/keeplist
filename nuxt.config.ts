@@ -10,6 +10,7 @@ export default defineNuxtConfig({
     "@nuxtjs/color-mode",
     "@pinia/nuxt",
     "@formkit/auto-animate/nuxt",
+    "@nuxtjs/google-fonts",
   ],
   nitro: {
     vercel: {
@@ -18,9 +19,15 @@ export default defineNuxtConfig({
       },
     },
     $production: {
-      preset: "vercel-edge",
+      preset: "vercel",
 
     }
+  },
+  googleFonts: {
+    preload: true,
+    families: {
+      "Quicksand": '300..700',
+    },
   },
   app: {
     head: {
