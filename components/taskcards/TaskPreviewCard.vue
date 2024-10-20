@@ -38,11 +38,13 @@
         Mitwirkende: {{ props.task.collaborator_details.map((user) => `${user.displayname}
         (${shortenTextInMiddle(user.mail)})`).join(", ") || "Keine" }}
       </p>
-      <Button @click="onClickCard" :loading="props.loading || cardClicked" class="mt-2 w-full" variant="secondary"
-        :shiny="task.activeStatistics.clientCount != 0">
-        <Icon icon="mdi:arrow-right" class="size-5" />
-        Öffnen
-      </Button>
+      <NuxtLink :to="`/${props.task._id.toString()}`">
+        <Button @click="onClickCard" :loading="props.loading || cardClicked" class="mt-2 w-full" variant="secondary"
+          :shiny="task.activeStatistics.clientCount != 0" @hover="preload">
+          <Icon icon="mdi:arrow-right" class="size-5" />
+          Öffnen
+        </Button>
+      </NuxtLink>
     </CardFooter>
   </Card>
 </template>
@@ -61,19 +63,16 @@ const props = defineProps<{
   loading: boolean;
 }>();
 
+const preload = () => {
+  preloadRouteComponents("/" + props.task._id.toString());
+}
+
 const createAt = useDateFormat(props.task.createdAt, "DD.MM.YYYY HH:mm");
 
-const onClickCard = async () => {
+const onClickCard = () => {
   if (!props.loading) {
     emits('clickcard', true);
     cardClicked.value = true;
-
-    const res = await useRouter().push(`/${props.task._id}`);
-
-    if (res) {
-      cardClicked.value = false;
-      emits('clickcard', false);
-    }
   }
 }
 

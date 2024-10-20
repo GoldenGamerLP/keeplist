@@ -17,6 +17,10 @@ export default defineNuxtConfig({
         maxDuration: 30,
       },
     },
+    $production: {
+      preset: "vercel-edge",
+
+    }
   },
   app: {
     head: {

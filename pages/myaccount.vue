@@ -1,5 +1,5 @@
 <template>
-    <div class="flex">
+    <div>
         <div class="flex flex-col w-full m-2">
             <div class="flex flex-col md:flex-row md:justify-between justify-normal md:space-y-0 space-y-2">
                 <div class="flex items-center gap-2">
@@ -84,7 +84,7 @@
                     </li>
                 </ul>
                 <Separator label="Mit dir geteilte Listen" class="my-4" />
-                <ul class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2" v-auto-animate>
+                <ul class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
                     <li v-for="task in sharedFilteredItems" :key="task._id" class="flex-grow-1">
                         <TaskPreviewCard :task="task" :loading="isLoading" @clickcard="onClickCard" />
                     </li>
