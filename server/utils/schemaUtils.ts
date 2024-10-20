@@ -63,11 +63,6 @@ const editTaskValidator = z.object({
   task: z.object({
     title: z.string().min(1),
     description: z.string(),
-    //TODO: A better way to validate date?!?!?!?
-    dueDate: z.coerce.date(),
-    status: z.string(),
-    assignee: z.string(),
-    tags: z.array(z.string()),
     id: z.string().min(1),
   }),
 });
