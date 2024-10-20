@@ -1,3 +1,4 @@
+import { set } from "zod";
 import { addSyncClient, removeSyncClient } from "~/server/utils/sync";
 
 export default defineEventHandler((event) => {
@@ -20,5 +21,10 @@ export default defineEventHandler((event) => {
     eventStream.close();
   });
 
+  setResponseHeader(event, "Content-Type", "text/event-stream");
+  setResponseHeader(event, "Cache-Control", "no-cache");
+  setResponseHeader(event, "Connection", "keep-alive");
+  setResponseHeader(event, "X-Accel-Buffering", "no");
+  
   return eventStream.send();
 });
