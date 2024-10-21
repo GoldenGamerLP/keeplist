@@ -45,6 +45,7 @@
     "typescript": "^5.6.2"
   },
   "overrides": {
-    "vue": "latest"
+    "vue": "latest",
+    "h3": "npm:h3-nightly@latest"
   }
 }

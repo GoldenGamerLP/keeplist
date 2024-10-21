@@ -32,12 +32,10 @@ export default defineNuxtConfig({
   app: {
     head: {
       charset: "utf-8",
+      title: "KeepList",
+      viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
       meta: [
         // Primary Meta Tags
-        {
-          name: "viewport",
-          content: "width=device-width, initial-scale=1, viewport-fit=cover",
-        },
         { name: "twitter:image", content: "/pwa-512x512.png" },
         { name: "x-ua-compatible", content: "IE=edge" },
         { name: "format-detection", content: "telephone=no" },

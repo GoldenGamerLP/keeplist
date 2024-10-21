@@ -140,6 +140,19 @@ const zoom = useCookie<number>("taskboard-zoom", { default: () => 100 });
 
 const { createTask, createCollection, editTaskBoard, editTask, editCollection, deleteTask, deleteCollection, updateCollaborators, data, fetch, onMoveCollection, onMoveTask, syncedUsers, sseStatus, fetchStatus, deleteBoard } = useTaskBoard();
 
+useHead({
+    titleTemplate: "%s | KeepList",
+    title() {
+        return data.value?.title || "Laden...";
+    },
+    meta: [
+        {
+            name: "description",
+            content: "Ein Taskboard, um Aufgaben zu verwalten."
+        }
+    ]
+});
+
 const deleteCol = (collectionId: string) => {
     deleteCollection({ collectionId });
 }

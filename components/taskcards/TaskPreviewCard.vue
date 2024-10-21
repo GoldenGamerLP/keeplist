@@ -40,7 +40,7 @@
       </p>
       <NuxtLink :to="`/${props.task._id.toString()}`">
         <Button @click="onClickCard" :loading="props.loading || cardClicked" class="mt-2 w-full" variant="secondary"
-          :shiny="task.activeStatistics.clientCount != 0" @hover="preload">
+          :shiny="task.activeStatistics.clientCount != 0" @mouseover="preload">
           <Icon icon="mdi:arrow-right" class="size-5" />
           Öffnen
         </Button>

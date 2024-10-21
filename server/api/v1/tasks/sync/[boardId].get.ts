@@ -1,6 +1,9 @@
 import { set } from "zod";
 import { addSyncClient, removeSyncClient } from "~/server/utils/sync";
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic'; // always run dynamically
+
 export default defineEventHandler((event) => {
   const { boardId } = getRouterParams(event);
   const { uniqueFingerprint } = getQuery(event);
@@ -25,6 +28,6 @@ export default defineEventHandler((event) => {
   setResponseHeader(event, "Cache-Control", "no-cache");
   setResponseHeader(event, "Connection", "keep-alive");
   setResponseHeader(event, "X-Accel-Buffering", "no");
-  
+
   return eventStream.send();
 });
