@@ -100,11 +100,22 @@ import CreateTaskboard from "~/components/taskcards/ListCreateEditModal.vue";
 import { useToast } from '~/components/ui/toast';
 import { useTasksStrore } from "~/store/tasks";
 import { useUser } from "~/composable/auth";
+
+//Middleware user-logged-in
+definePageMeta({
+    middleware: "only-logged-in",
+});
+
+useHead({
+    title: "KeepList",
+})
+
 const user = useUser();
 
 const createTaskboard = ref<InstanceType<typeof CreateTaskboard>>();
 const { toast } = useToast();
 const tasksStore = useTasksStrore();
+
 
 const fetch = await useFetch("/api/v1/tasks/taskcards", {
     headers: {

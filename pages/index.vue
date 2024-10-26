@@ -1,5 +1,5 @@
 <template>
-    <div class="h-screen flex flex-col justify-between items-center">
+    <div class="h-dvh flex flex-col justify-between items-center">
         <header class="max-w-sm mt-32">
             <Icon name="lucide:list-plus" class="animate-bounce" size="50" />
             <h1 class="text-2xl font-bold text-primary">KeepList</h1>
