@@ -107,7 +107,7 @@ definePageMeta({
 });
 
 useHead({
-    title: "KeepList",
+    title: "KeepList - Meine Listen",
 })
 
 const user = useUser();

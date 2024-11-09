@@ -35,7 +35,7 @@ const createCollectionValidator = z.object({
 
 const moveTaskValidator = z.object({
   boardId: z.string().min(1),
-  taskId: z.string().min(1),
+  id: z.string().min(1),
   collectionId: z.string().min(1),
   newCollectionId: z.string().min(1),
   oldIndex: z.number().min(-1),

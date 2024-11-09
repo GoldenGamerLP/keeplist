@@ -1,12 +1,15 @@
-import { set } from "zod";
 import { addSyncClient, removeSyncClient } from "~/server/utils/sync";
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic'; // always run dynamically
-
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
   const { boardId } = getRouterParams(event);
   const { uniqueFingerprint } = getQuery(event);
+
+  if(!event.context.user) {
+    throw createError({
+      status: 401,
+      statusText: "Unauthorized",
+    });
+  }
 
   if (!boardId || !uniqueFingerprint || typeof uniqueFingerprint !== "string") {
     throw createError({
@@ -15,9 +18,10 @@ export default defineEventHandler((event) => {
     });
   }
 
+  const user = await lookupUsers([event.context.user.id]);
   const eventStream = createEventStream(event);
 
-  addSyncClient(uniqueFingerprint, boardId.toString(), event.context.user ?? undefined, eventStream);
+  addSyncClient(uniqueFingerprint, boardId.toString(), user[0], eventStream);
 
   eventStream.onClosed(() => {
     removeSyncClient(boardId.toString(),uniqueFingerprint);

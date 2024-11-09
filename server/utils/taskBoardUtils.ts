@@ -2,6 +2,7 @@ import { ObjectId } from "mongodb";
 import database from "./mongodbUtils";
 import { publishSyncEvent, runSyncUpdateTask, getUpdateStats } from "./sync";
 import { SafeUser } from "~/server/utils/authUtils";
+import { User } from "lucia";
 
 const intervallMilliseconds = process.env.TASKCARDS_UPDATE_SEND_INTERVALL;
 
@@ -25,7 +26,7 @@ function startSyncUpdateTask() {
   }, parseInt(intervallMilliseconds ?? "5000"));
 }
 
-export function hasAccessToTaskboard(userId: string, boardId: string) {
+export const hasAccessToTaskboard = (userId: string, boardId: string) => {
   return boardCollection.countDocuments({
     _id: new ObjectId(boardId),
     $or: [{ author: userId }, { collaborators: userId }],
@@ -71,11 +72,13 @@ export async function deleteBoard(boardId: string) {
 
   const sucess = res.deletedCount === 1;
 
-  if(!sucess) {
+  if (!sucess) {
     return false;
   }
 
-  await publishSyncEvent(boardId, undefined, "system", "deleteKeepList", { boardId });
+  await publishSyncEvent(boardId, undefined, "system", "deleteKeepList", {
+    boardId,
+  });
 
   return true;
 }
@@ -232,7 +235,7 @@ export async function createCollection(
 }
 
 export async function deleteTask(
-  userId: string | undefined,
+  userId: string,
   publisher: string,
   boardId: string,
   collectionId: string,
@@ -263,7 +266,7 @@ export async function deleteTask(
 }
 
 export async function deleteCollection(
-  userId: string | undefined,
+  userId: string,
   publisher: string,
   boardId: string,
   collectionId: string
@@ -293,7 +296,7 @@ export async function deleteCollection(
 }
 
 export async function editTaskBoard(
-  userId: string | undefined,
+  userId: string,
   publisher: string,
   boardId: string,
   title: string,
@@ -321,7 +324,13 @@ export async function editTaskBoard(
 
   await refreshTaskboardEdited(boardId);
 
-  const action: EditTaskBoardInterface = { title, description, color, tags, userId };
+  const action: EditTaskBoardInterface = {
+    title,
+    description,
+    color,
+    tags,
+    userId,
+  };
 
   publishSyncEvent(boardId, userId, publisher, "editTaskBoard", action);
 
@@ -329,7 +338,7 @@ export async function editTaskBoard(
 }
 
 export async function editCollection(
-  userId: string | undefined,
+  userId: string,
   publisher: string,
   boardId: string,
   collectionId: string,
@@ -371,7 +380,7 @@ export async function editCollection(
 }
 
 export async function editTask(
-  userId: string | undefined,
+  userId: string,
   publisher: string,
   boardId: string,
   collectionId: string,
@@ -386,12 +395,7 @@ export async function editTask(
       $set: {
         "collection.$.tasks.$[task].title": task.title,
         "collection.$.tasks.$[task].description": task.description,
-        "collection.$.tasks.$[task].dueDate": task.dueDate,
-        "collection.$.tasks.$[task].status": task.status,
-        "collection.$.tasks.$[task].assignee": task.assignee,
-        "collection.$.tasks.$[task].tags": task.tags,
-        "collection.$.tasks.$[task].comments": task.comments,
-        "collection.$.tasks.$[task].attachments": task.attachments,
+        "collection.$.tasks.$[task].lastUpdated": new Date(),
       },
     },
     {
@@ -405,7 +409,11 @@ export async function editTask(
 
   await refreshTaskboardEdited(boardId);
 
-  const action: OnEditTaskInterface = { collectionId, task: task as Task, userId };
+  const action: OnEditTaskInterface = {
+    collectionId,
+    task: task as Task,
+    userId,
+  };
 
   publishSyncEvent(boardId, userId, publisher, "editTask", action);
 
@@ -413,7 +421,7 @@ export async function editTask(
 }
 
 export async function createTask(
-  userId: string | undefined,
+  userId: string,
   publisher: string,
   boardId: string,
   collectionId: string,
@@ -423,12 +431,7 @@ export async function createTask(
   const task = {
     title,
     description,
-    dueDate: new Date(),
-    status: "todo",
-    assignee: "John Doe",
-    tags: ["tag1", "tag2"],
-    comments: [],
-    attachments: [],
+    createdAt: new Date(),
     id: new ObjectId().toHexString(),
   } as Task;
 
@@ -461,9 +464,8 @@ export async function createTask(
   return task;
 }
 
-//boardId, taskId, collectionId, newCollectionId, oldIndex, newIndex
 export async function moveTask(
-  userId: string | undefined,
+  userId: string,
   publisher: string,
   boardId: string,
   taskId: string,
@@ -472,72 +474,55 @@ export async function moveTask(
   oldIndex: number,
   newIndex: number
 ) {
-  // Ensure the taskBoard is found
-  const taskCollection = boardCollection.aggregate([
-    {
-      $match: {
-        _id: new ObjectId(boardId),
-      },
-    },
-    {
-      $project: {
-        collection: {
-          $filter: {
-            input: "$collection",
-            as: "col",
-            cond: { $eq: ["$$col.id", collectionId] },
-          },
-        },
-      },
-    },
-  ]);
+  // Fetch the task board and collections
+  const taskBoard = await boardCollection.findOne({
+    _id: new ObjectId(boardId),
+  });
 
-  const documents = await taskCollection.toArray();
-
-  if (!documents || documents.length === 0) {
+  if (!taskBoard) {
+    console.error("Task board not found.");
     return false;
   }
 
-  const collection = documents[0].collection[0] as TaskCollection;
-  const selectedTask = collection.tasks[oldIndex];
-
-  if (selectedTask.id !== taskId) {
-    return false;
-  }
-
-  //Move the task to the new collection
-  const aggregate = await boardCollection.updateOne(
-    {
-      _id: new ObjectId(boardId),
-      "collection.id": collectionId,
-    },
-    {
-      $pull: {
-        "collection.$.tasks": { id: taskId },
-      },
-    }
+  // Find the source and destination collections
+  const sourceCollection = taskBoard.collection.find(
+    (col) => col.id === collectionId
+  );
+  const destinationCollection = taskBoard.collection.find(
+    (col) => col.id === newCollectionId
   );
 
-  if (aggregate.modifiedCount === 0) {
+  if (!sourceCollection || !destinationCollection) {
+    console.error("Source or destination collection not found.");
     return false;
   }
 
-  const newAggregate = await boardCollection.updateOne(
-    {
-      _id: new ObjectId(boardId),
-      "collection.id": newCollectionId,
-    },
-    {
-      $push: {
-        "collection.$.tasks": {
-          $each: [selectedTask],
-          $position: newIndex,
-        },
-      },
-    }
+  // Find the task in the source collection
+  const selectedTask = sourceCollection.tasks.find(
+    (task) => task.id === taskId
   );
 
-  if (newAggregate.modifiedCount === 0) {
+  if (!selectedTask) {
+    console.error("Task not found in source collection.");
+    return false;
+  }
+
+  // Remove the task from the source collection
+  sourceCollection.tasks = sourceCollection.tasks.filter(
+    (task) => task.id !== taskId
+  );
+
+  // Insert the task into the destination collection at the specified index
+  destinationCollection.tasks.splice(newIndex, 0, selectedTask);
+
+  // Update the task board in the database
+  const res = await boardCollection.updateOne(
+    { _id: new ObjectId(boardId) },
+    { $set: { collection: taskBoard.collection } }
+  );
+
+  if (res.modifiedCount === 0) {
+    console.error("Failed to update task board in the database.");
     return false;
   }
 
@@ -557,8 +542,19 @@ export async function moveTask(
   return true;
 }
 
+/**
+ * Moves a collection within a task board from one index to another.
+ *
+ * @param userId - The ID of the user performing the action.
+ * @param publisher - The publisher of the event.
+ * @param boardId - The ID of the task board.
+ * @param collectionId - The ID of the collection to move.
+ * @param oldIndex - The current index of the collection.
+ * @param newIndex - The new index to move the collection to.
+ * @returns A promise that resolves to a boolean indicating whether the move was successful.
+ */
 export async function moveCollection(
-  userId: string | undefined,
+  userId: string,
   publisher: string,
   boardId: string,
   collectionId: string,
@@ -590,7 +586,7 @@ export async function moveCollection(
     return false;
   }
 
-  const newCollections = switchArrayPosition(collections, oldIndex, newIndex);
+  const newCollections = switchArrayPosition(collections, oldIndex, newIndex) as TaskCollection[];
 
   const res = await boardCollection.updateOne(
     {
@@ -621,13 +617,19 @@ export async function moveCollection(
   return true;
 }
 
-function switchArrayPosition(array: any[], oldIndex: number, newIndex: number) {
+function switchArrayPosition(array: object[], oldIndex: number, newIndex: number) {
   const newArray = [...array];
   const [removed] = newArray.splice(oldIndex, 1);
   newArray.splice(newIndex, 0, removed);
   return newArray;
 }
 
+/**
+ * Updates the `lastUpdated` field of a task board with the current date and time.
+ *
+ * @param boardId - The unique identifier of the task board to be updated.
+ * @returns A promise that resolves to `true` if the task board was successfully updated, otherwise `false`.
+ */
 async function refreshTaskboardEdited(boardId: string) {
   const res = await boardCollection.updateOne(
     {
@@ -643,6 +645,13 @@ async function refreshTaskboardEdited(boardId: string) {
   return res.modifiedCount > 0;
 }
 
+/**
+ * Retrieves task boards where the specified user is a collaborator, 
+ * along with safe user details for the author and collaborators.
+ *
+ * @param {string} userId - The ID of the user to find task boards for.
+ * @returns {Promise<Array>} A promise that resolves to an array of task boards with safe user details.
+ */
 export async function getUserInvitedTaskboardWithSafeUser(userId: string) {
   return await boardCollection
     .aggregate([
@@ -696,21 +705,13 @@ export async function getUserInvitedTaskboardWithSafeUser(userId: string) {
     .toArray();
 }
 
-export type TaskCardPreview = {
-  _id: ObjectId;
-  title: string;
-  description: string;
-  color: string;
-  lastUpdated: Date | undefined;
-  tags: string[];
-  collaborators: string[];
-  createdAt: Date;
-  author: string;
-  activeStatistics: UpdateUserStatistics;
-  collaborator_details: SafeUser[];
-  author_details: SafeUser[];
-};
-
+/**
+ * Retrieves a preview of task boards for a given user.
+ *
+ * @param userId - The ID of the user whose task boards are to be retrieved.
+ * @param mode - The mode of retrieval, either "own" for boards authored by the user or "shared" for boards the user is a collaborator on. Defaults to "own".
+ * @returns A promise that resolves to an array of task board previews.
+ */
 export async function retrieveTaskboardsPreview(
   userId: string,
   mode: "own" | "shared" = "own"
@@ -769,7 +770,7 @@ export async function retrieveTaskboardsPreview(
   return res.map((board) => {
     const author = board.author_details as SafeUser[];
     const collaborators = board.collaborator_details as SafeUser[];
-    
+
     return {
       ...(board as TaskBoard),
       author_details: author,
@@ -781,6 +782,21 @@ export async function retrieveTaskboardsPreview(
 
 //TODO: Better handling of start methods
 startSyncUpdateTask();
+
+export type TaskCardPreview = {
+  _id: ObjectId;
+  title: string;
+  description: string;
+  color: string;
+  lastUpdated: Date | undefined;
+  tags: string[];
+  collaborators: string[];
+  createdAt: Date;
+  author: string;
+  activeStatistics: UpdateUserStatistics;
+  collaborator_details: SafeUser[];
+  author_details: SafeUser[];
+};
 
 interface TaskBoard {
   title: string;
@@ -812,6 +828,8 @@ interface Task {
   title: string;
   description: string;
   id: string;
+  createdAt: Date;
+  lastUpdated?: Date;
 }
 
 //Interfaces for data sync: MoveCollection, CreateCollection, MoveTask, CreateTask, EditTaskBoard
@@ -878,7 +896,7 @@ interface DeleteCollectionInterface {
 interface UpdateUserStatistics {
   clientCount: number;
   verifiedUserCount: number;
-  users: SafeUser[];
+  users: User[];
 }
 
 interface FetchReadyTaskBoard extends TaskBoard {
@@ -891,8 +909,6 @@ export type {
   TaskBoard,
   TaskCollection,
   Task,
-  Attachment,
-  Comment,
   OnMoveTaskInterface,
   OnMoveCollectionInterface,
   CreateTaskInterface,

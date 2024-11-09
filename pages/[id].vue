@@ -5,8 +5,11 @@
             class="h-screen w-screen flex flex-col overflow-hidden">
             <header class="flex rounded-md bg-card text-card-foreground p-2 m-1 border">
                 <div class="flex flex-row">
-                    <Icon name="bx:bx-chevron-left" class="size-8 text-foreground cursor-pointer"
-                        @click="$router.back()"></Icon>
+                    <NuxtLink to="myaccount" class="flex items-center gap-2">
+                        <Button variant="ghost" size="icon">
+                            <Icon name="mdi:arrow-left" class="size-6"></Icon>
+                        </Button>
+                    </NuxtLink>
                     <div>
                         <h1 class="text-2xl flex flex-row items-center">
                             <Icon name="bx:bx-collection" class="size-7 mr-1" :style="{ 'color': data.color }"></Icon>
@@ -65,10 +68,10 @@
                             </div>
                             <draggable v-model="collection.tasks" tag="ol" @end="onMoveTask" ghost-class="opacity-70"
                                 group="'tasks'" item-key="id" v-auto-animate :id="collection.id" handle=".taskhandle"
-                                class="space-y-2">
+                                class="space-y-2" :delay="200" :delay-on-touch-only="true" :disabled="true">
                                 <template #item="{ element: task }">
                                     <li :key="task.id" :data-taskid="task.id"
-                                        class="bg-accent/80 rounded-md p-2 flex flex-row items-center ms-3 shadow">
+                                        class="bg-accent/80 rounded-md p-2 flex flex-row items-center ms-3 shadow" draggable>
                                         <Icon name="radix-icons:drag-handle-dots-2"
                                             class="size-6 -ml-2 mt-1 cursor-move text-muted-foreground taskhandle flex-none">
                                         </Icon>

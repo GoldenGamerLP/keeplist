@@ -1,4 +1,3 @@
-import { User } from "lucia";
 import { UpdateUserStatistics } from "./taskBoardUtils";
 import {SafeUser} from "~/server/utils/authUtils";
 
