@@ -1,4 +1,3 @@
-import { User } from "lucia";
 import { UpdateUserStatistics } from "./taskBoardUtils";
 import {SafeUser} from "~/server/utils/authUtils";
 
@@ -63,7 +62,7 @@ const addSyncClient = (
 
   //TODO: fix _id workarround: look at authUtils and DataBaseUserAttributes!
   const syncClient = {
-    user: user ? {...user, _id: user.id} : undefined,
+    user,
     stream,
     boardId,
     uniqueFingerprint,

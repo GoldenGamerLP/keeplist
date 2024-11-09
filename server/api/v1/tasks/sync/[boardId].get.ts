@@ -4,6 +4,13 @@ export default defineEventHandler(async (event) => {
   const { boardId } = getRouterParams(event);
   const { uniqueFingerprint } = getQuery(event);
 
+  if(!event.context.user) {
+    throw createError({
+      status: 401,
+      statusText: "Unauthorized",
+    });
+  }
+
   if (!boardId || !uniqueFingerprint || typeof uniqueFingerprint !== "string") {
     throw createError({
       status: 400,
@@ -11,21 +18,20 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  const user = await lookupUsers([event.context.user.id]);
   const eventStream = createEventStream(event);
 
-  // Add the client to the sync clients
-  addSyncClient(uniqueFingerprint, boardId.toString(), event.context.user ?? undefined, eventStream);
+  addSyncClient(uniqueFingerprint, boardId.toString(), user[0], eventStream);
 
-  // Implement keep-alive mechanism
-  const keepAliveInterval = setInterval(() => {
-    eventStream.push("\n\nkeep-alive\n\n");
-  }, 10000); // Send a keep-alive comment every 10 seconds
-
-  eventStream.onClosed(async () => {
-    clearInterval(keepAliveInterval); // Clear the keep-alive interval
-    removeSyncClient(boardId.toString(), uniqueFingerprint);
-    await eventStream.close();
+  eventStream.onClosed(() => {
+    removeSyncClient(boardId.toString(),uniqueFingerprint);
+    eventStream.close();
   });
+
+  setResponseHeader(event, "Content-Type", "text/event-stream");
+  setResponseHeader(event, "Cache-Control", "no-cache");
+  setResponseHeader(event, "Connection", "keep-alive");
+  setResponseHeader(event, "X-Accel-Buffering", "no");
 
   return eventStream.send();
 });

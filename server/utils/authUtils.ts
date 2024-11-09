@@ -15,7 +15,6 @@ declare module "lucia" {
     Lucia: typeof lucia;
     DatabaseUserAttributes: DatabaseUserAttributes;
     DatabaseSessionAttributes: DatabaseSessionAttributes;
-    UserId: string;
   }
 }
 

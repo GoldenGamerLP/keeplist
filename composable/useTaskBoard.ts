@@ -1,6 +1,7 @@
 import { useEventSource } from "@vueuse/core";
 import { useTasksStrore } from "~/store/tasks";
 import { useToast } from "~/components/ui/toast";
+import { Title } from "#build/components";
 
 export const useTaskBoard = () => {
   const tasksStore = useTasksStrore();
@@ -134,7 +135,7 @@ export const useTaskBoard = () => {
     );
 
     if (col) {
-      const taskIndex = col.tasks.findIndex((t) => t.id === payload.taskId);
+      const taskIndex = col.tasks.findIndex((t) => t._id === payload.taskId);
       col.tasks.splice(taskIndex, 1);
       toast({ title: "Task Deleted", description: `Task has been deleted` });
     } else {
@@ -199,7 +200,7 @@ export const useTaskBoard = () => {
     const col = data.value.collection.find((col) => col.id === collectionId);
 
     if (col) {
-      const task = col.tasks.find((t) => t.id === payload.task.id);
+      const task = col.tasks.find((t) => t._id === payload.task._id);
 
       if (task) {
         task.title = payload.task.title;
@@ -335,7 +336,7 @@ export const useTaskBoard = () => {
     try {
       const res = await action;
 
-      if (!!res) {
+      if (res) {
         if (mode === "success" || mode === "both") {
           toast({
             title: "Success",
@@ -382,6 +383,8 @@ export const useTaskBoard = () => {
     const oldIndex = (event.oldIndex as number) ?? 0;
     const id = event.item.dataset.taskid as string;
 
+    console.log("HasFrom:", from.id ?? "No from", "HasTo:", to.id ?? "No to", "NewIndex:", newIndex, "OldIndex:", oldIndex, "ID:", id);
+
     showFeedback(
       tasksStore.moveTask(boardId, id, from.id, to.id, oldIndex, newIndex),
       "moving task"
@@ -421,6 +424,7 @@ export const useTaskBoard = () => {
       `creating task ${title}`,
       "success",
       (response) => {
+        if(!data.value) return;
         const collection = data.value.collection.find(
           (col) => col.id === colId
         );
@@ -458,7 +462,7 @@ export const useTaskBoard = () => {
       tasksStore.deleteTask(boardId, event.collectionId, event.taskId),
       `deleting task`,
       "success",
-      (response) => {
+      () => {
         const col = data.value.collection.find(
           (col) => col.id === event.collectionId
         );
@@ -478,7 +482,7 @@ export const useTaskBoard = () => {
       tasksStore.deleteCollection(boardId, event.collectionId),
       `deleting collection`,
       "success",
-      (response) => {
+      () => {
         const colIndex = data.value.collection.findIndex(
           (col) => col.id === event.collectionId
         );
@@ -508,7 +512,7 @@ export const useTaskBoard = () => {
       ),
       `editing collection ${event.title}`,
       "success",
-      (response) => {
+      () => {
         const col = data.value.collection.find(
           (col) => col.id === event.collectionId
         );
@@ -540,11 +544,14 @@ export const useTaskBoard = () => {
       ),
       `editing task board ${event.title}`,
       "success",
-      (response) => {
-        data.value.title = event.title;
-        data.value.description = event.description;
-        data.value.color = event.color;
-        data.value.tags = event.tags;
+      () => {
+        if(!data.value) return;
+        let { title, description, color, tags } = data.value;
+
+        title = event.title;
+        description = event.description;
+        color = event.color;
+        tags = event.tags;
       }
     );
   };
@@ -556,13 +563,13 @@ export const useTaskBoard = () => {
       tasksStore.editTask(boardId, event.collectionId, event.task),
       `editing task ${event.task.title}`,
       "success",
-      (response) => {
+      () => {
         const col = data.value.collection.find(
           (col) => col.id === event.collectionId
         );
 
         if (col) {
-          const task = col.tasks.find((t) => t.id === event.task.id);
+          const task = col.tasks.find((t) => t._id === event.task._id);
 
           if (task) {
             task.title = event.task.title;
@@ -573,7 +580,7 @@ export const useTaskBoard = () => {
     );
   };
 
-  const onDeleteKeepList = async () => {
+  const onDeleteKeepList = () => {
     if(!data.value) return;
 
     useRouter().push("/myaccount");

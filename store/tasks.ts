@@ -67,7 +67,7 @@ export const useTasksStrore = defineStore("tasks", () => {
 
   const moveTask = (
     boardId: string,
-    taskId: string,
+    id: string,
     collectionId: string,
     newCollectionId: string,
     oldIndex: number,
@@ -77,7 +77,7 @@ export const useTasksStrore = defineStore("tasks", () => {
       method: "POST",
       body: JSON.stringify({
         boardId,
-        taskId,
+        id,
         collectionId,
         newCollectionId,
         oldIndex,
